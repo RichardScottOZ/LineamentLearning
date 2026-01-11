@@ -315,6 +315,48 @@ from Demo import *
 
 ![AppletDemo](./AppletDemo.png)
 
+## 🔗 Integration with Original Pipeline
+
+The modernization maintains **100% backward compatibility** while providing integration bridges.
+
+### Original Components Still Work
+
+All original files are preserved and functional:
+- **MODEL.py**: Original RotateNet architecture
+- **DATASET.py**: Data loading from .mat files
+- **FILTER.py**: Rotation filters
+- **Prob2Line.py**: Original clustering & line fitting
+- **PmapViewer.py**: GUI applet
+- **RotateLearning.py**: Original training workflows
+- **Utility.py**: Helper functions
+
+### Integration Bridge
+
+The `bridge.py` module connects original and modern components:
+
+```python
+from bridge import DatasetAdapter, LegacyTrainer
+from config import Config
+
+# Use original data loading with modern models
+config = Config()
+config.model.architecture = 'UNet'  # Modern architecture!
+
+trainer = LegacyTrainer(config, 'path/to/data.mat')
+history = trainer.train_simple(ratio=0.1, epochs=10)
+```
+
+### Pipeline Coverage
+
+- ✅ **Model architectures**: Enhanced (3 architectures vs 1)
+- ✅ **Post-processing**: Enhanced (BestCurve + visualization)
+- ✅ **Configuration**: Modernized (JSON vs global vars)
+- ✅ **CLI**: Enhanced (5 commands vs basic argparse)
+- ⚠️ **Data loading**: Available but needs integration for modern training
+- ⚠️ **Rotation filters**: Available but not integrated with modern pipeline
+
+See [PIPELINE_COVERAGE.md](PIPELINE_COVERAGE.md) for detailed comparison and [bridge.py](bridge.py) for integration examples.
+
 ## 🤝 Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
