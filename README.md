@@ -56,6 +56,9 @@ This modernized version includes significant improvements:
 - Line/curve fitting (linear, polynomial)
 - Probability map generation
 - Visualization tools
+- Comprehensive statistics
+
+See [POSTPROCESSING_GUIDE.md](POSTPROCESSING_GUIDE.md) for detailed documentation.
 
 ## 🚀 Installation
 

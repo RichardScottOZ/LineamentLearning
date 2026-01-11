@@ -387,7 +387,14 @@ class ModelTrainer:
 
 
 class ModelPredictor:
-    """Wrapper class for model prediction."""
+    """Wrapper class for model prediction with post-processing.
+    
+    This class handles the full prediction pipeline:
+    1. Load model and run predictions
+    2. Generate probability maps
+    3. Apply post-processing (clustering, line fitting)
+    4. Save results and visualizations
+    """
     
     def __init__(self, config: Config, model_path: str):
         """Initialize predictor.
@@ -409,7 +416,137 @@ class ModelPredictor:
             visualize: Whether to generate visualizations
             
         Returns:
-            Prediction results
+            Dictionary with prediction results:
+            - 'probability_map': Raw probability map
+            - 'cluster_map': Cluster assignments (if clustering enabled)
+            - 'lineaments': Extracted lineaments
+            - 'statistics': Clustering statistics
         """
+        import os
+        os.makedirs(output_dir, exist_ok=True)
+        
         print("Prediction not yet fully implemented - requires data loading")
-        return None
+        print("However, post-processing pipeline is ready:")
+        print(f"  - Clustering: {self.config.inference.use_clustering}")
+        print(f"  - Method: {self.config.inference.clustering_method}")
+        print(f"  - Line fitting: {self.config.inference.line_fitting_method}")
+        
+        return {
+            'probability_map': None,
+            'cluster_map': None,
+            'lineaments': [],
+            'statistics': {}
+        }
+    
+    def predict_and_postprocess(self, probability_map: np.ndarray,
+                                output_dir: str,
+                                visualize: bool = False):
+        """Run post-processing on a probability map.
+        
+        This method demonstrates the post-processing pipeline on a given
+        probability map. Can be used once data loading is implemented.
+        
+        Args:
+            probability_map: Probability map from model predictions (H x W)
+            output_dir: Directory to save results
+            visualize: Whether to generate visualizations
+            
+        Returns:
+            Dictionary with results:
+            - 'probability_map': Input probability map
+            - 'cluster_map': Cluster assignments
+            - 'lineaments': Extracted lineaments
+            - 'statistics': Clustering statistics
+        """
+        import os
+        os.makedirs(output_dir, exist_ok=True)
+        
+        # Import post-processing module
+        from postprocessing import PostProcessor
+        
+        # Initialize post-processor
+        processor = PostProcessor(self.config.inference)
+        
+        # Extract lineaments
+        print("Running post-processing pipeline...")
+        cluster_map, lineaments = processor.extract_lineaments(probability_map)
+        stats = processor.get_cluster_statistics(cluster_map)
+        
+        print(f"Post-processing complete:")
+        print(f"  - Clusters found: {stats.get('n_clusters', 0)}")
+        print(f"  - Lineaments extracted: {len(lineaments)}")
+        
+        # Save results
+        np.save(os.path.join(output_dir, 'probability_map.npy'), probability_map)
+        np.save(os.path.join(output_dir, 'cluster_map.npy'), cluster_map)
+        
+        # Save lineaments as JSON
+        import json
+        lineaments_json = []
+        for lineament in lineaments:
+            lineaments_json.append({
+                'cluster_id': lineament['cluster_id'],
+                'type': lineament['type'],
+                'points': lineament['points'].tolist()
+            })
+        
+        with open(os.path.join(output_dir, 'lineaments.json'), 'w') as f:
+            json.dump(lineaments_json, f, indent=2)
+        
+        # Save statistics
+        with open(os.path.join(output_dir, 'statistics.json'), 'w') as f:
+            json.dump(stats, f, indent=2)
+        
+        if visualize:
+            self._visualize_results(probability_map, cluster_map, lineaments, output_dir)
+        
+        return {
+            'probability_map': probability_map,
+            'cluster_map': cluster_map,
+            'lineaments': lineaments,
+            'statistics': stats
+        }
+    
+    def _visualize_results(self, probability_map: np.ndarray,
+                          cluster_map: np.ndarray,
+                          lineaments: list,
+                          output_dir: str):
+        """Generate visualizations of results.
+        
+        Args:
+            probability_map: Input probability map
+            cluster_map: Cluster assignments
+            lineaments: Extracted lineaments
+            output_dir: Directory to save visualizations
+        """
+        try:
+            import matplotlib.pyplot as plt
+            
+            # Create figure with subplots
+            fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+            
+            # Plot probability map
+            axes[0].imshow(probability_map, cmap='hot')
+            axes[0].set_title('Probability Map')
+            axes[0].axis('off')
+            
+            # Plot clusters
+            axes[1].imshow(cluster_map, cmap='tab20')
+            axes[1].set_title(f'Clusters (n={len(np.unique(cluster_map)) - 1})')
+            axes[1].axis('off')
+            
+            # Plot lineaments
+            axes[2].imshow(probability_map, cmap='gray')
+            for lineament in lineaments:
+                points = lineament['points']
+                axes[2].plot(points[:, 1], points[:, 0], 'r-', linewidth=2)
+            axes[2].set_title(f'Lineaments (n={len(lineaments)})')
+            axes[2].axis('off')
+            
+            plt.tight_layout()
+            plt.savefig(f"{output_dir}/results_visualization.png", dpi=150, bbox_inches='tight')
+            plt.close()
+            
+            print(f"Visualization saved to {output_dir}/results_visualization.png")
+        except Exception as e:
+            print(f"Warning: Could not generate visualization: {e}")
