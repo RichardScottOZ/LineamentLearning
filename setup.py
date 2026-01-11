@@ -64,8 +64,8 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'lineament-train=cli:train_command',
-            'lineament-predict=cli:predict_command',
+            'lineament-train=cli:main',
+            'lineament-predict=cli:main',
         ],
     },
 )

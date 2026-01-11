@@ -9,6 +9,9 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from config import Config
 from model_modern import build_model
 
+# Import TensorFlow at module level for model operations
+import tensorflow as tf
+
 
 def main():
     parser = argparse.ArgumentParser(description='Run predictions')
@@ -25,11 +28,11 @@ def main():
     # Create demo model if no model provided
     if args.model:
         print(f"Loading model from: {args.model}")
-        import tensorflow as tf
         try:
             model = tf.keras.models.load_model(args.model)
-        except:
-            print("Error loading model, creating demo model")
+        except Exception as e:
+            print(f"Error loading model: {e}")
+            print("Creating demo model instead")
             model = build_model(config)
     else:
         print("Creating demo model")
@@ -44,5 +47,4 @@ def main():
     print(f"Detections (>{args.threshold}): {(predictions >= args.threshold).sum()}")
 
 if __name__ == '__main__':
-    import tensorflow as tf
     main()

@@ -258,10 +258,14 @@ def build_model(config: Config) -> keras.Model:
     else:
         raise ValueError(f"Unknown architecture: {config.model.architecture}")
     
+    # Enable mixed precision training if configured
+    if config.model.use_mixed_precision:
+        tf.keras.mixed_precision.set_global_policy('mixed_float16')
+    
     # Setup optimizer with learning rate
     optimizer = keras.optimizers.Adam(learning_rate=config.model.learning_rate)
     
-    # Enable mixed precision training if configured
+    # Wrap optimizer for mixed precision if needed
     if config.model.use_mixed_precision:
         optimizer = keras.mixed_precision.LossScaleOptimizer(optimizer)
     

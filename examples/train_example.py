@@ -8,6 +8,9 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from config import Config
 from model_modern import build_model, ModelTrainer
 
+# Import TensorFlow at module level for model.summary()
+import tensorflow as tf
+
 
 def main():
     parser = argparse.ArgumentParser(description='Train a lineament detection model')
@@ -33,5 +36,4 @@ def main():
     print("Note: Actual training requires data loading implementation")
 
 if __name__ == '__main__':
-    import tensorflow as tf
     main()
