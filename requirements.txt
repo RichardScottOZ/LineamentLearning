@@ -1,0 +1,28 @@
+# Core dependencies
+numpy>=1.21.0,<2.0.0
+scipy>=1.7.0
+pillow>=9.0.0
+
+# Deep Learning - Modern TensorFlow 2.x
+tensorflow>=2.10.0,<2.16.0
+keras>=2.10.0
+
+# Machine Learning
+scikit-learn>=1.0.0
+
+# Visualization
+matplotlib>=3.5.0
+
+# GUI (Optional - for legacy applet)
+# tkinter is usually included with Python
+
+# Data handling
+h5py>=3.7.0
+
+# Optional: Modern alternatives
+# gradio>=3.0.0  # For modern web UI
+# streamlit>=1.20.0  # Alternative modern web UI
+# tensorboard>=2.10.0  # Training visualization
+# pyyaml>=6.0  # Configuration management
+# click>=8.0.0  # Modern CLI
+# tqdm>=4.64.0  # Progress bars
