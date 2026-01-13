@@ -24,13 +24,28 @@ def create_parser() -> argparse.ArgumentParser:
     # Train command
     train_parser = subparsers.add_parser('train', help='Train a model')
     train_parser.add_argument('--config', type=str, help='Path to configuration file')
-    train_parser.add_argument('--data', type=str, required=True, help='Path to training data')
+    train_parser.add_argument('--data', type=str, required=True, help='Path to training data (.mat file)')
     train_parser.add_argument('--output', type=str, default='./models', help='Output directory for models')
     train_parser.add_argument('--window-size', type=int, help='Window size for patches')
     train_parser.add_argument('--epochs', type=int, help='Number of training epochs')
     train_parser.add_argument('--batch-size', type=int, help='Batch size')
     train_parser.add_argument('--architecture', type=str, choices=['RotateNet', 'UNet', 'ResNet'],
                             help='Model architecture')
+    train_parser.add_argument('--train-ratio', type=float, default=0.1,
+                            help='Ratio of training data to use (0.0 to 1.0)')
+    train_parser.add_argument('--val-ratio', type=float, default=0.5,
+                            help='Ratio of validation data to use (0.0 to 1.0)')
+    train_parser.add_argument('--choosy', action='store_true',
+                            help='Only use fault locations for training')
+    
+    # Augmentation options
+    train_parser.add_argument('--enable-rotation', action='store_true',
+                            help='Enable rotation augmentation')
+    train_parser.add_argument('--rotation-prob', type=float, default=0.5,
+                            help='Probability of applying rotation (0.0 to 1.0)')
+    train_parser.add_argument('--enable-flipping', action='store_true',
+                            help='Enable flipping augmentation')
+    
     train_parser.add_argument('--resume', type=str, help='Resume training from checkpoint')
     train_parser.add_argument('--tensorboard', action='store_true', help='Enable TensorBoard logging')
     train_parser.add_argument('--gpu', type=int, help='GPU device ID to use')
@@ -99,6 +114,13 @@ def train_command(args: argparse.Namespace) -> int:
     if args.architecture:
         config.model.architecture = args.architecture
     
+    # Augmentation settings
+    if args.enable_rotation:
+        config.augmentation.enable_rotation = True
+        config.augmentation.rotation_probability = args.rotation_prob
+    if args.enable_flipping:
+        config.augmentation.enable_flipping = True
+    
     # Set device
     if args.gpu is not None:
         import os
@@ -111,6 +133,13 @@ def train_command(args: argparse.Namespace) -> int:
     print(f"  Window Size: {config.model.window_size}")
     print(f"  Epochs: {config.model.epochs}")
     print(f"  Batch Size: {config.model.batch_size}")
+    print(f"  Train Ratio: {args.train_ratio}")
+    print(f"  Val Ratio: {args.val_ratio}")
+    
+    if config.augmentation.enable_rotation:
+        print(f"  Rotation: ENABLED (p={config.augmentation.rotation_probability})")
+    if config.augmentation.enable_flipping:
+        print(f"  Flipping: ENABLED")
     
     # Import here to avoid loading TensorFlow unnecessarily
     try:
@@ -122,10 +151,13 @@ def train_command(args: argparse.Namespace) -> int:
             print(f"Resuming from checkpoint: {args.resume}")
             trainer.load_checkpoint(args.resume)
         
-        # Train model
+        # Train model with new integrated data loading
         trainer.train(
             data_path=args.data,
-            use_tensorboard=args.tensorboard
+            train_ratio=args.train_ratio,
+            val_ratio=args.val_ratio,
+            use_tensorboard=args.tensorboard,
+            choosy=args.choosy
         )
         
         print("\nTraining completed successfully!")
