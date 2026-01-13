@@ -82,9 +82,14 @@ class DataGenerator:
             ratio: Ratio of samples to use
             
         Returns:
-            Tuple of (X, Y, IDX)
+            Tuple of (X, Y, IDX), or None if no validation data available
         """
-        if self._val_data is None and hasattr(self.dataset, 'testMask'):
+        if not hasattr(self.dataset, 'testMask'):
+            print("Warning: No testMask found in dataset. Validation data not available.")
+            print("  This is expected for datasets loaded in non-normal mode.")
+            return None
+            
+        if self._val_data is None:
             print(f"Generating validation data (ratio={ratio})...")
             self._val_data = self.dataset.generateDS(
                 output=self.dataset.OUTPUT,

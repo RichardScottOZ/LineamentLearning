@@ -257,25 +257,21 @@ class RotationAugmentation(layers.Layer):
         """Initialize rotation augmentation layer.
         
         Args:
-            filter_path: Optional path to FILTER.py .mat file
+            filter_path: Optional path to FILTER.py .mat file (currently not used - TensorFlow rotation only)
             rotation_angles: List of angles in degrees for random rotation (e.g., [0, 90, 180, 270])
             probability: Probability of applying rotation (0.0 to 1.0)
+            
+        Note:
+            FILTER.py integration is planned for future releases.
+            Currently uses TensorFlow's efficient rotation operations.
         """
         super().__init__(**kwargs)
         self.filter_path = filter_path
         self.rotation_angles = rotation_angles or [0, 90, 180, 270]
         self.probability = probability
-        self.use_original_filters = filter_path is not None
         
-        # Load FILTER if path provided
-        if self.use_original_filters:
-            try:
-                from FILTER import FILTER
-                self.filter = FILTER(filter_path)
-            except Exception as e:
-                print(f"Warning: Could not load FILTER from {filter_path}: {e}")
-                print("Falling back to TensorFlow rotation")
-                self.use_original_filters = False
+        # Note: FILTER.py loading disabled for now - TF rotation is faster and graph-compatible
+        # Future versions may add FILTER.py support for specialized rotation matrices
     
     def call(self, inputs, training=None):
         """Apply rotation augmentation during training.
@@ -304,42 +300,23 @@ class RotationAugmentation(layers.Layer):
             
         Returns:
             Rotated tensor
+            
+        Note:
+            Uses tf.image.rot90 for efficiency and graph compatibility.
+            Arbitrary angle rotation with scipy is avoided as it breaks graph mode.
         """
         # For TensorFlow rotation, use random angle from the list
-        # Convert angles to radians for tf.image operations
-        angles_rad = [angle * np.pi / 180.0 for angle in self.rotation_angles]
-        
-        # Randomly select an angle
-        angle_idx = tf.random.uniform([], 0, len(angles_rad), dtype=tf.int32)
-        angle = tf.constant(angles_rad)[angle_idx]
-        
-        # Use tf.image.rot90 for 90-degree rotations (more efficient)
-        # For k rotations: k=1 means 90°, k=2 means 180°, k=3 means 270°
+        # Use tf.image.rot90 for 90-degree rotations (efficient and graph-compatible)
         if len(self.rotation_angles) == 4 and all(a % 90 == 0 for a in self.rotation_angles):
-            k = angle_idx  # Direct mapping: 0->0°, 1->90°, 2->180°, 3->270°
+            # Random k value: 0->0°, 1->90°, 2->180°, 3->270°
+            k = tf.random.uniform([], 0, 4, dtype=tf.int32)
             return tf.image.rot90(inputs, k=k)
         else:
-            # For arbitrary angles, use scipy-based rotation
-            # Note: This is less efficient and may not work in graph mode
-            return tf.py_function(
-                func=lambda x, a: self._scipy_rotate(x.numpy(), a.numpy()),
-                inp=[inputs, angle],
-                Tout=inputs.dtype
-            )
-    
-    def _scipy_rotate(self, inputs, angle):
-        """Rotate using scipy (for arbitrary angles).
-        
-        Args:
-            inputs: Numpy array
-            angle: Rotation angle in radians
-            
-        Returns:
-            Rotated numpy array
-        """
-        import scipy.ndimage
-        angle_deg = angle * 180.0 / np.pi
-        return scipy.ndimage.rotate(inputs, angle_deg, reshape=False, order=1)
+            # For non-90-degree angles, use only 90-degree multiples
+            # This maintains graph compatibility
+            print("Warning: Non-90-degree angles provided, using only [0, 90, 180, 270]")
+            k = tf.random.uniform([], 0, 4, dtype=tf.int32)
+            return tf.image.rot90(inputs, k=k)
     
     def get_config(self):
         """Get layer configuration for serialization."""
@@ -519,7 +496,7 @@ def build_model(config: Config, apply_augmentation: bool = True) -> keras.Model:
 class ModelTrainer:
     """Wrapper class for model training with modern features."""
     
-    def __init__(self, config: Config, output_dir: str, data_generator: Optional['DataGenerator'] = None):
+    def __init__(self, config: Config, output_dir: str, data_generator: Optional[DataGenerator] = None):
         """Initialize trainer.
         
         Args:
