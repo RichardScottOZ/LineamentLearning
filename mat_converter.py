@@ -369,11 +369,18 @@ class MatConverter:
         format = format.lower()
         
         if format in ['numpy', 'npz']:
-            return self.convert_to_numpy(input_path, output_path, **kwargs)
+            # Filter kwargs for numpy conversion
+            numpy_kwargs = {k: v for k, v in kwargs.items() if k in ['compress']}
+            return self.convert_to_numpy(input_path, output_path, **numpy_kwargs)
         elif format in ['hdf5', 'h5']:
-            return self.convert_to_hdf5(input_path, output_path, **kwargs)
+            # Filter kwargs for hdf5 conversion
+            hdf5_kwargs = {k: v for k, v in kwargs.items() 
+                          if k in ['compression', 'compression_opts', 'chunks']}
+            return self.convert_to_hdf5(input_path, output_path, **hdf5_kwargs)
         elif format == 'zarr':
-            return self.convert_to_zarr(input_path, output_path, **kwargs)
+            # Filter kwargs for zarr conversion
+            zarr_kwargs = {k: v for k, v in kwargs.items() if k in ['chunks', 'compressor']}
+            return self.convert_to_zarr(input_path, output_path, **zarr_kwargs)
         else:
             raise ValueError(f"Unsupported format: {format}")
     
