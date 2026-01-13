@@ -355,7 +355,10 @@ history = trainer.train_simple(ratio=0.1, epochs=10)
 - ⚠️ **Data loading**: Available but needs integration for modern training
 - ⚠️ **Rotation filters**: Available but not integrated with modern pipeline
 
-See [PIPELINE_COVERAGE.md](PIPELINE_COVERAGE.md) for detailed comparison and [bridge.py](bridge.py) for integration examples.
+**📖 Documentation**:
+- [PIPELINE_COVERAGE.md](PIPELINE_COVERAGE.md) - Detailed comparison of original vs modern features
+- [DATA_LOADING_ROTATION_IMPROVEMENTS.md](DATA_LOADING_ROTATION_IMPROVEMENTS.md) - Specification for data loading and rotation improvements
+- [bridge.py](bridge.py) - Integration examples between original and modern components
 
 ## 🤝 Contributing
 

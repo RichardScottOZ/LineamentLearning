@@ -354,12 +354,13 @@ Use consistent formatting:
 - [ ] Add comprehensive test suite
 - [ ] Create Jupyter notebook examples
 - [ ] Implement Gradio/Streamlit dashboard
-- [ ] Add data loading pipeline
+- [ ] Add data loading pipeline (see [DATA_LOADING_ROTATION_IMPROVEMENTS.md](DATA_LOADING_ROTATION_IMPROVEMENTS.md))
+- [ ] Implement rotation augmentation integration (see [DATA_LOADING_ROTATION_IMPROVEMENTS.md](DATA_LOADING_ROTATION_IMPROVEMENTS.md))
 - [ ] Docker containerization
 
 ### Medium Priority
 - [ ] Add more model architectures
-- [ ] Implement data augmentation pipeline
+- [ ] Implement additional data augmentation options
 - [ ] Add model export (ONNX, TFLite)
 - [ ] Create API server
 - [ ] Add visualization tools
@@ -370,6 +371,18 @@ Use consistent formatting:
 - [ ] Write unit tests
 - [ ] Fix small bugs
 - [ ] Add examples
+
+### Detailed Specifications Available
+
+For data loading and rotation augmentation improvements, we have detailed specifications:
+- 📖 [DATA_LOADING_ROTATION_IMPROVEMENTS.md](DATA_LOADING_ROTATION_IMPROVEMENTS.md) - Complete implementation guide
+- 📖 [PIPELINE_COVERAGE.md](PIPELINE_COVERAGE.md) - Current state analysis
+
+These documents provide:
+- Technical requirements and API designs
+- Implementation roadmap with time estimates
+- Code examples and test strategies
+- Success criteria
 
 ## Questions?
 

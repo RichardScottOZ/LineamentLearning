@@ -132,8 +132,17 @@ This document analyzes the coverage of the original LineamentLearning pipeline f
 
 ## Missing Integration Points
 
+> **📖 For detailed improvement specifications, see [DATA_LOADING_ROTATION_IMPROVEMENTS.md](DATA_LOADING_ROTATION_IMPROVEMENTS.md)**
+
 ### 1. Data Loading Pipeline
 **What's Missing**: Integration of DATASET.py with ModelTrainer
+
+**Specific Issues**:
+- ❌ No tf.data.Dataset pipeline for efficient data loading
+- ❌ No batch prefetching and parallel loading
+- ❌ No integration with ModelTrainer's fit() method
+- ❌ CLI commands assume data integration but it doesn't work out-of-the-box
+- ❌ No streaming for large datasets
 
 **Impact**: Cannot run actual training without manual integration
 
@@ -148,10 +157,23 @@ model = build_model(config)
 model.fit(X, Y)
 ```
 
-**Future**: Create DataGenerator class that wraps DATASET
+**What Needs to Be Done**:
+1. Create `DataGenerator` class that wraps DATASET and provides tf.data.Dataset
+2. Integrate DataGenerator with ModelTrainer
+3. Update CLI to use DataGenerator automatically
+4. Add examples and documentation
+
+**Estimated Effort**: 1-2 days (see detailed specification in DATA_LOADING_ROTATION_IMPROVEMENTS.md)
 
 ### 2. Rotation-Based Augmentation
 **What's Missing**: Integration of FILTER.py rotation matrices
+
+**Specific Issues**:
+- ❌ No integration with tf.keras data augmentation layers
+- ❌ No automatic rotation during training
+- ❌ No configuration option to enable/disable rotation augmentation
+- ❌ Cannot use rotation augmentation with modern ModelTrainer
+- ❌ No random rotation angle generation using modern TensorFlow operations
 
 **Impact**: Original rotation augmentation not available in modern training
 
@@ -162,10 +184,23 @@ flt = FILTER('path/to/filters.mat')
 # Apply rotations manually
 ```
 
-**Future**: Add rotation augmentation to config and ModelTrainer
+**What Needs to Be Done**:
+1. Create `RotationAugmentation` tf.keras layer
+2. Add `AugmentationConfig` to config.py with rotation settings
+3. Integrate augmentation layers in model building
+4. Support both FILTER.py matrices and TensorFlow rotation
+5. Add configuration examples and documentation
+
+**Estimated Effort**: 1 day (see detailed specification in DATA_LOADING_ROTATION_IMPROVEMENTS.md)
 
 ### 3. Workflow Scripts
 **What's Missing**: Direct equivalents of train-choosy, test-choosy, etc.
+
+**Specific Issues**:
+- ❌ No preset workflows for common training scenarios
+- ❌ No angle detection workflow implementation
+- ❌ No dataset preparation commands
+- ❌ Users need to write custom scripts for specialized workflows
 
 **Impact**: Need to manually implement workflows
 
@@ -175,7 +210,15 @@ flt = FILTER('path/to/filters.mat')
 # Use: Custom script with DATASET + ModelTrainer
 ```
 
-**Future**: Add workflow presets to CLI
+**What Needs to Be Done**:
+1. Add workflow presets to CLI (e.g., --workflow choosy)
+2. Implement angle detection workflow
+3. Add dataset preparation commands
+4. Document workflow options
+
+**Estimated Effort**: 1-2 days
+
+**Note**: This is lower priority than data loading and rotation integration.
 
 ## Backward Compatibility
 
@@ -220,6 +263,12 @@ model = build_model(config)
 3. **Training workflows**: Specific workflow implementations
 4. **Full pipeline**: End-to-end training → inference
 
+**📖 Detailed Improvement Specifications**: See [DATA_LOADING_ROTATION_IMPROVEMENTS.md](DATA_LOADING_ROTATION_IMPROVEMENTS.md) for:
+- Specific technical requirements for each improvement
+- Implementation roadmap with time estimates
+- Code examples and API specifications
+- Testing strategy and success criteria
+
 ### ✅ What's Preserved (Backward Compatibility)
 1. **All original files** work as before
 2. **Original GUI** (PmapViewer, Demo.py)
@@ -242,4 +291,14 @@ To make it production-ready for training:
 
 **Current state**: Excellent for inference and post-processing, needs data integration for training.
 
-**Time to complete**: Data integration ~1-2 days
+**Time to complete**: 
+- Data integration: ~1-2 days (HIGH priority)
+- Rotation augmentation: ~1 day (MEDIUM priority)
+- Workflow presets: ~1-2 days (LOW priority)
+
+**📖 See [DATA_LOADING_ROTATION_IMPROVEMENTS.md](DATA_LOADING_ROTATION_IMPROVEMENTS.md)** for complete implementation specifications, including:
+- Detailed technical requirements
+- Code examples and API designs
+- Testing strategy
+- Performance considerations
+- Common issues and solutions
