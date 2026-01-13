@@ -62,6 +62,27 @@ class DataConfig:
 
 
 @dataclass
+class AugmentationConfig:
+    """Configuration for data augmentation."""
+    
+    # Rotation augmentation
+    enable_rotation: bool = False
+    rotation_filter_path: Optional[str] = None  # Path to FILTER.py .mat file
+    rotation_probability: float = 0.5  # Probability of applying rotation
+    rotation_angles: List[int] = field(default_factory=lambda: [0, 90, 180, 270])  # TF rotation angles
+    
+    # Flipping augmentation
+    enable_flipping: bool = False
+    flip_probability: float = 0.5
+    
+    # Brightness/contrast augmentation
+    enable_brightness: bool = False
+    brightness_delta: float = 0.1
+    enable_contrast: bool = False
+    contrast_range: Tuple[float, float] = (0.9, 1.1)
+
+
+@dataclass
 class InferenceConfig:
     """Configuration for model inference."""
     
@@ -83,6 +104,7 @@ class Config:
     
     model: ModelConfig = field(default_factory=ModelConfig)
     data: DataConfig = field(default_factory=DataConfig)
+    augmentation: AugmentationConfig = field(default_factory=AugmentationConfig)
     inference: InferenceConfig = field(default_factory=InferenceConfig)
     
     # General settings
@@ -107,6 +129,7 @@ class Config:
         return cls(
             model=ModelConfig(**config_dict.get('model', {})),
             data=DataConfig(**config_dict.get('data', {})),
+            augmentation=AugmentationConfig(**config_dict.get('augmentation', {})),
             inference=InferenceConfig(**config_dict.get('inference', {})),
             debug_mode=config_dict.get('debug_mode', True),
             random_seed=config_dict.get('random_seed', 42),
@@ -125,6 +148,7 @@ class Config:
         config_dict = {
             'model': asdict(self.model),
             'data': asdict(self.data),
+            'augmentation': asdict(self.augmentation),
             'inference': asdict(self.inference),
             'debug_mode': self.debug_mode,
             'random_seed': self.random_seed,
