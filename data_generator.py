@@ -25,20 +25,26 @@ class DataGenerator:
     - Integration with model.fit()
     """
     
-    def __init__(self, config: Config, dataset_path: str, mode: str = 'normal'):
+    def __init__(self, config: Config, dataset_path: str, mode: str = 'normal', file_format: str = 'auto'):
         """Initialize data generator.
         
         Args:
             config: Configuration object
-            dataset_path: Path to .mat dataset file
+            dataset_path: Path to dataset file (.mat, .npz, or .h5)
             mode: Dataset mode ('normal' or other modes supported by DATASET)
+            file_format: Format of dataset file:
+                - 'auto': Auto-detect from extension (default)
+                - 'mat': MATLAB .mat format
+                - 'numpy' or 'npz': NumPy .npz format
+                - 'hdf5' or 'h5': HDF5 format
         """
         self.config = config
         self.dataset_path = dataset_path
         self.mode = mode
+        self.file_format = file_format
         
-        # Load dataset using original DATASET class
-        self.dataset = DATASET(dataset_path, mode=mode)
+        # Load dataset using DATASET class (now supports multiple formats)
+        self.dataset = DATASET(dataset_path, mode=mode, file_format=file_format)
         
         # Cache for generated data
         self._train_data = None

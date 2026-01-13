@@ -50,6 +50,15 @@ This modernized version includes significant improvements:
 - Gravity maps
 - Digital elevation models (DEM)
 - Multiple geophysical layers (up to 8 layers)
+- **Multiple file formats**: .mat (MATLAB), .npz (NumPy), .h5 (HDF5)
+
+### Data Format Conversion
+- Convert MATLAB .mat files to PyData formats (NumPy, HDF5, Zarr)
+- Improved performance and interoperability
+- Memory-efficient chunked loading for large datasets
+- Built-in conversion tools and utilities
+
+See [MAT_TO_PYDATA_GUIDE.md](MAT_TO_PYDATA_GUIDE.md) for data conversion documentation.
 
 ### Post-Processing
 - DBSCAN clustering
@@ -100,12 +109,42 @@ lineament-train --help
 
 ## 🎮 Quick Start
 
+### Converting Data (Optional but Recommended)
+
+For better performance, convert MATLAB .mat files to HDF5 format:
+
+```bash
+# Inspect your .mat file
+python -m mat_converter --inspect ./Dataset/Australia/Rotations/Australia_strip.mat
+
+# Convert to HDF5 (faster loading, better compression)
+python -m mat_converter \
+    ./Dataset/Australia/Rotations/Australia_strip.mat \
+    ./Dataset/Australia_strip.h5 \
+    --format hdf5
+
+# Validate conversion
+python -m mat_converter --validate \
+    ./Dataset/Australia/Rotations/Australia_strip.mat \
+    ./Dataset/Australia_strip.h5
+```
+
+See [MAT_TO_PYDATA_GUIDE.md](MAT_TO_PYDATA_GUIDE.md) for comprehensive conversion documentation.
+
 ### Training a Model
 
 ```bash
-# Train with default RotateNet architecture
+# Train with default RotateNet architecture (using .mat file)
 lineament-train \
     --data ./Dataset/Australia/Rotations/Australia_strip.mat \
+    --output ./models/my_model \
+    --epochs 50 \
+    --tensorboard
+
+# Train with converted HDF5 file (faster)
+lineament-train \
+    --data ./Dataset/Australia_strip.h5 \
+    --format hdf5 \
     --output ./models/my_model \
     --epochs 50 \
     --tensorboard
