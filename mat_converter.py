@@ -3,7 +3,11 @@
 MATLAB .mat to PyData Format Converter
 
 This module provides utilities to convert LineamentLearning .mat files
-to various PyData formats (NumPy, HDF5, Zarr, Parquet).
+to various PyData formats (NumPy, HDF5, Zarr).
+
+Note: While the companion documentation (MAT_TO_PYDATA_GUIDE.md) discusses
+Parquet format for reference, this module currently focuses on array-based
+formats (NumPy, HDF5, Zarr) which are most suitable for spatial data.
 """
 
 import argparse
@@ -485,14 +489,32 @@ class MatConverter:
             converted_data = {}
             with h5py.File(converted_path, 'r') as f:
                 # Recursively load all datasets
-                def load_recursive(group, prefix=''):
+                def load_recursive(group):
                     for key in group.keys():
-                        path = f"{prefix}/{key}" if prefix else key
                         if isinstance(group[key], h5py.Dataset):
                             converted_data[key] = np.array(group[key])
                         else:
-                            load_recursive(group[key], path)
+                            load_recursive(group[key])
                 load_recursive(f)
+        elif format == 'zarr':
+            try:
+                import zarr
+            except ImportError:
+                raise ImportError("zarr required for validation. Install with: pip install zarr")
+            
+            converted_data = {}
+            root = zarr.open(str(converted_path), mode='r')
+            
+            def load_zarr_recursive(group):
+                """Recursively load arrays from Zarr group."""
+                for key in group.keys():
+                    item = group[key]
+                    if isinstance(item, zarr.core.Array):
+                        converted_data[key] = np.array(item[:])
+                    else:
+                        load_zarr_recursive(item)
+            
+            load_zarr_recursive(root)
         else:
             raise ValueError(f"Validation not implemented for format: {format}")
         

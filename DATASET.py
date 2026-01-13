@@ -167,12 +167,13 @@ class DATASET:
                             result[key] = np.array(f['labels'][key])
             else:
                 # Load from flat structure
-                def load_recursive(group, prefix=''):
+                def load_recursive(group):
+                    """Recursively load datasets from HDF5 group."""
                     for key in group.keys():
                         if isinstance(group[key], h5py.Dataset):
                             result[key] = np.array(group[key])
                         else:
-                            load_recursive(group[key], prefix + key + '/')
+                            load_recursive(group[key])
                 
                 load_recursive(f)
         
