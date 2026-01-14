@@ -53,32 +53,131 @@ def labelAngel(radian, base = np.pi / 2.0):
     return np.abs(radian - base) <= radianTH
 
 class DATASET:
-    """ Dataset Class, Loads dataset from MATLAB file. Have some function to expand fault lines, ...."""
+    """ Dataset Class, Loads dataset from MATLAB file or PyData formats (NumPy, HDF5).
+    
+    This class now supports loading data from:
+    - .mat files (original MATLAB format)
+    - .npz files (NumPy compressed archive)
+    - .h5 files (HDF5 format)
+    
+    Usage:
+        # Load from .mat file (default)
+        ds = DATASET('data.mat')
+        
+        # Load from .npz file
+        ds = DATASET('data.npz', file_format='numpy')
+        
+        # Load from .h5 file
+        ds = DATASET('data.h5', file_format='hdf5')
+    """
 
-    def __init__(self , directory, mode = 'normal'):
-
-        DS = sio.loadmat(directory)
+    def __init__(self, directory, mode='normal', file_format='auto'):
+        """Initialize dataset from file.
+        
+        Args:
+            directory: Path to dataset file
+            mode: 'normal' loads all fields, other modes skip test_mask and output
+            file_format: Format of input file:
+                - 'auto': Auto-detect from file extension (default)
+                - 'mat': MATLAB .mat format
+                - 'numpy' or 'npz': NumPy .npz format
+                - 'hdf5' or 'h5': HDF5 format
+        """
+        # Auto-detect format from file extension
+        if file_format == 'auto':
+            if str(directory).endswith('.npz'):
+                file_format = 'numpy'
+            elif str(directory).endswith(('.h5', '.hdf5')):
+                file_format = 'hdf5'
+            else:
+                file_format = 'mat'
+        
+        # Load data based on format
+        if file_format in ['numpy', 'npz']:
+            DS = self._load_numpy(directory)
+        elif file_format in ['hdf5', 'h5']:
+            DS = self._load_hdf5(directory)
+        else:  # Default to .mat format
+            DS = sio.loadmat(directory)
+        
+        # Initialize dimensions
         self.x = DS['I1'].shape[0]
         self.y = DS['I1'].shape[1]
 
         self.INPUTS = np.zeros((self.x, self.y, Layers))
 
+        # Load input layers
         for i in range(Layers):
             self.INPUTS[:,:,i] = np.array(DS['I{}'.format(i+1)])
 
+        # Load required fields
         self.MASK = np.array(DS['mask'])
         self.trainMask = np.array(DS['train_mask'])
 
+        # Load optional fields for 'normal' mode
         if mode.__eq__('normal'):
-            self.testMask = np.array(DS['test_mask'])
-            self.OUTPUT = np.array(DS['output'])
-            self.R2M = np.array(DS['R2M'])
-            self.M2R = np.array(DS['M2R'])
+            if 'test_mask' in DS:
+                self.testMask = np.array(DS['test_mask'])
+            if 'output' in DS:
+                self.OUTPUT = np.array(DS['output'])
+            if 'R2M' in DS:
+                self.R2M = np.array(DS['R2M'])
+            if 'M2R' in DS:
+                self.M2R = np.array(DS['M2R'])
 
         self.DEGREES = np.array(DS['DEGREES'])
 
+        # Normalize inputs
         for i in range(Layers):
             self.INPUTS[:, :, i] = myNormalizer(self.INPUTS[:, :, i])
+    
+    def _load_numpy(self, filepath):
+        """Load data from NumPy .npz file."""
+        data = np.load(filepath)
+        # Convert to dict for consistent interface
+        return {key: data[key] for key in data.files}
+    
+    def _load_hdf5(self, filepath):
+        """Load data from HDF5 file."""
+        try:
+            import h5py
+        except ImportError:
+            raise ImportError(
+                "h5py required to load HDF5 files. Install with: pip install h5py"
+            )
+        
+        result = {}
+        with h5py.File(filepath, 'r') as f:
+            # Check if data is organized in groups (from mat_converter)
+            if 'inputs' in f:
+                # Load from organized structure
+                for i in range(1, 9):
+                    key = f'I{i}'
+                    if key in f['inputs']:
+                        result[key] = np.array(f['inputs'][key])
+                
+                if 'masks' in f:
+                    for key in ['mask', 'train_mask', 'test_mask']:
+                        if key in f['masks']:
+                            result[key] = np.array(f['masks'][key])
+                
+                if 'labels' in f:
+                    for key in ['output', 'DEGREES', 'R2M', 'M2R']:
+                        if key in f['labels']:
+                            result[key] = np.array(f['labels'][key])
+            else:
+                # Load from flat structure
+                def load_recursive(group):
+                    """Recursively load datasets from HDF5 group."""
+                    for key in group.keys():
+                        if isinstance(group[key], h5py.Dataset):
+                            result[key] = np.array(group[key])
+                        else:
+                            load_recursive(group[key])
+                
+                load_recursive(f)
+        
+        return result
 
 
     def expandBy(self, width=3, epsilon = 1.0, type = 'manhattan', set = True):
